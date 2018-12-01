@@ -35,10 +35,8 @@
         "asyncArrow": "always"
       }
     ],
-    "func-names": [
-      "error",
-      "as-needed"
-    ],
+    "no-return-assign": "off",
+    "func-names": "off",
     "no-tabs": [
       "error",
       {

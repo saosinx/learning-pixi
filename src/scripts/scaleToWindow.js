@@ -1,76 +1,27 @@
-/* eslint-disable spaced-comment */
-export default function scaleToWindow(canvas, backgroundColor) {
-	let center
+export default function scaleToWindow() {
+	let newGameWidth = 0
+	let newGameHeight = 0
+	let newGameX = 0
+	let newGameY = 0
 
-	//1. Scale the canvas to the correct size
-	//Figure out the scale amount on each axis
-	const scaleX = window.innerWidth / canvas.offsetWidth
-	const scaleY = window.innerHeight / canvas.offsetHeight
+	const viewport = {
+		width: window.innerWidth,
+		height: window.innerHeight,
+	}
 
-	//Scale the canvas based on whichever value is less: `scaleX` or `scaleY`
-	const scale = Math.min(scaleX, scaleY)
-	canvas.style.transformOrigin = '0 0'
-	canvas.style.transform = `scale(${scale})`
-
-	//2. Center the canvas.
-	//Decide whether to center the canvas vertically or horizontally.
-	//Wide canvases should be centered vertically, and
-	//square or tall canvases should be centered horizontally
-	if (canvas.offsetWidth > canvas.offsetHeight) {
-		if (canvas.offsetWidth * scale < window.innerWidth) {
-			center = 'horizontally'
-		} else {
-			center = 'vertically'
-		}
-	} else if (canvas.offsetHeight * scale < window.innerHeight) {
-		center = 'vertically'
+	if (this.height / this.width > viewport.height / viewport.width) {
+		newGameHeight = viewport.height
+		newGameWidth = (newGameHeight * this.width) / this.height
 	} else {
-		center = 'horizontally'
+		newGameWidth = viewport.width
+		newGameHeight = (newGameWidth * this.height) / this.width
 	}
 
-	//Center horizontally (for square or tall canvases)
-	let margin = 0
-	if (center === 'horizontally') {
-		margin = (window.innerWidth - canvas.offsetWidth * scale) / 2
-		canvas.style.marginTop = `${0}px`
-		canvas.style.marginBottom = `${0}px`
-		canvas.style.marginLeft = `${margin}px`
-		canvas.style.marginRight = `${margin}px`
-	}
+	this.style.width = `${newGameWidth}px`
+	this.style.height = `${newGameHeight}px`
 
-	//Center vertically (for wide canvases)
-	if (center === 'vertically') {
-		margin = (window.innerHeight - canvas.offsetHeight * scale) / 2
-		canvas.style.marginTop = `${margin}px`
-		canvas.style.marginBottom = `${margin}px`
-		canvas.style.marginLeft = `${0}px`
-		canvas.style.marginRight = `${0}px`
-	}
+	newGameX = (viewport.width - newGameWidth) / 2
+	newGameY = (viewport.height - newGameHeight) / 2
 
-	//3. Remove any padding from the canvas  and body and set the canvas
-	//display style to "block"
-	canvas.style.paddingLeft = `${0}px`
-	canvas.style.paddingRight = `${0}px`
-	canvas.style.paddingTop = `${0}px`
-	canvas.style.paddingBottom = `${0}px`
-	canvas.style.display = 'block'
-
-	//4. Set the color of the HTML body background
-	document.body.style.backgroundColor = backgroundColor
-
-	//Fix some quirkiness in scaling for Safari
-	const ua = window.navigator.userAgent.toLowerCase()
-	if (ua.indexOf('safari') !== -1) {
-		if (ua.indexOf('chrome') > -1) {
-			// Chrome
-		} else {
-			// Safari
-			//canvas.style.maxHeight = "100%";
-			//canvas.style.minHeight = "100%";
-		}
-	}
-
-	//5. Return the `scale` value. This is important, because you'll nee this value
-	//for correct hit testing between the pointer and sprites
-	return scale
+	this.style.margin = `${newGameY}px ${newGameX}px`
 }
