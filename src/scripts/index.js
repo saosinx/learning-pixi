@@ -37,14 +37,20 @@ view.scaleToWindow = scaleToWindow.bind(view)
 window.addEventListener('resize', view.scaleToWindow)
 view.scaleToWindow()
 
-const alignCenter = function(sprite) {
-	sprite.position.set(
-		sprite.parent.width / 2 - sprite.width / 2,
-		sprite.parent.height / 2 - sprite.height / 2
-	)
+const alignVertical = function(sprite) {
+	sprite.y = sprite.parent.height / 2 - sprite.height / 2
 }
 
-const disabeButton = function(sprite, texture = null) {
+const alignHorizontal = function(sprite) {
+	sprite.x = sprite.parent.width / 2 - sprite.width / 2
+}
+
+const alignCenter = function(sprite) {
+	alignVertical(sprite)
+	alignHorizontal(sprite)
+}
+
+const disableButton = function(sprite, texture = null) {
 	if (texture) sprite.texture = TextureCache[texture]
 	sprite.interactive = false
 	sprite.buttonMode = false
@@ -63,10 +69,32 @@ const decorateButton = function(sprite) {
 	sprite.hitArea = new Circle(sprite.width / 2, sprite.height / 2, sprite.width / 2)
 }
 
+const getLocalizedCurrencyValue = function(value) {
+	const localizedValue = value.toLocaleString('zh-CN', {
+		style: 'currency',
+		currency: 'CNY',
+		maximumFractionDigits: 2,
+		minimumFractionDigits: 0,
+	})
+
+	return localizedValue
+}
+
+const getCoinValue = function(value) {
+	return value / 15
+}
+
 const setup = function() {
 	const id = resources['assets/images/atlas.json'].textures
 
 	const bottomBar = new Sprite(resources['assets/images/bottom-bar.png'].texture)
+	const paytableBar = new Sprite(id['info_bottom_bar.png'])
+	const paytableLeftArrow = new Sprite(id['info_bottom_bar_control-left-arrow_disabled.png'])
+	const paytableCross = new Sprite(id['info_bottom_bar_control-middle-cross.png'])
+	const paytableRightArrow = new Sprite(id['info_bottom_bar_control-right-arrow.png'])
+	const paytableLeftBtnBg = new Sprite(id['info_bottom_bar_control-left_disabled.png'])
+	const paytableMiddleBtnBg = new Sprite(id['info_bottom_bar_control-middle_normal.png'])
+	const paytableRightBtnBg = new Sprite(id['info_bottom_bar_control-right_normal.png'])
 	const btnInfo = new Sprite(id['btn_normal.png'])
 	const btnInfoSign = new Sprite(id['btn_info_sign.png'])
 	const totalBetBg = new Sprite(id['bg_totalbet.png'])
@@ -82,18 +110,23 @@ const setup = function() {
 	const btnSpin = new Sprite(id['btn_spin.png'])
 	const spinSign = new Sprite(id['spin_sign.png'])
 
+	const paytableLeftButton = new Container()
+	const paytableMiddleButton = new Container()
+	const paytableRightButton = new Container()
+
+	const autoContainer = new Container()
 	const bottomBarContainer = new Container()
-	const infoBarContainer = new Container()
-	const buttonInfoContainer = new Container()
-	const totalBetContainer = new Container()
-	const coinContainer = new Container()
 	const btnDecContainer = new Container()
 	const btnIncContainer = new Container()
-	const winBoxContainer = new Container()
-	const turboContainer = new Container()
-	const turboBtnContainer = new Container()
-	const autoContainer = new Container()
+	const buttonInfoContainer = new Container()
+	const coinContainer = new Container()
+	const infoBarContainer = new Container()
+	const paytableContainer = new Container()
 	const spinContainer = new Container()
+	const totalBetContainer = new Container()
+	const turboBtnContainer = new Container()
+	const turboContainer = new Container()
+	const winBoxContainer = new Container()
 
 	const textStyle = new TextStyle({
 		fontFamily: 'Noto Sans CJK SC Black',
@@ -123,19 +156,12 @@ const setup = function() {
 		dropShadowColor: '#4e0005',
 	})
 
-	const boxValueTextStyle = new TextStyle({
+	const currencyTextStyle = new TextStyle({
 		...textStyle,
 		fill: '#ffd100',
 		fontSize: 36,
 		dropShadowColor: '#710008',
 	})
-
-	const localeSettings = {
-		style: 'currency',
-		currency: 'CNY',
-		maximumFractionDigits: 2,
-		minimumFractionDigits: 0,
-	}
 
 	const betMap = [5]
 	for (let i = 0; i < 6; i += 1) {
@@ -170,12 +196,18 @@ const setup = function() {
 	btnInfo.on('mouseover', () => (btnInfo.texture = TextureCache['btn_hover.png']))
 	btnInfo.on('mouseout', () => (btnInfo.texture = TextureCache['btn_normal.png']))
 	btnInfo.on('pointerdown', () => (btnInfo.texture = TextureCache['btn_click.png']))
-	btnInfo.on('pointerup', () => (btnInfo.texture = TextureCache['btn_hover.png']))
+	btnInfo.on('pointerup', () => {
+		btnInfo.texture = TextureCache['btn_hover.png']
+		bottomBarContainer.visible = false
+		paytableContainer.visible = true
+	})
 
 	// Totalbet container
-	const localizedTotalBetValue = betMap[betMapIndex].toLocaleString('zh-CN', localeSettings)
 	const totalBetTitleText = new Text('TOTAL BET', boxTitleTextStyle)
-	const totalBetValueText = new Text(localizedTotalBetValue, boxValueTextStyle)
+	const totalBetValueText = new Text(
+		getLocalizedCurrencyValue(betMap[betMapIndex]),
+		currencyTextStyle
+	)
 
 	totalBetContainer.name = 'TotalBet'
 	totalBetContainer.position.set(255, 60)
@@ -188,7 +220,8 @@ const setup = function() {
 	)
 
 	totalBetTitleText.position.set(totalBetContainer.width / 2 - totalBetTitleText.width / 2, 15)
-	totalBetValueText.position.set(totalBetContainer.width / 2 - totalBetValueText.width / 2, 45)
+	totalBetValueText.position.set(totalBetContainer.width / 2, 75)
+	totalBetValueText.anchor.set(0.5, 0.5)
 
 	btnDecContainer.name = 'DecrementButton'
 	btnDecContainer.position.set(10, 10)
@@ -204,26 +237,27 @@ const setup = function() {
 	btnDec.on('mouseout', () => {
 		if (!btnDec.disabled) btnDec.texture = TextureCache['btn-sm_normal.png']
 	})
-	btnDec.on('pointerup', () => {
-		if (!btnDec.disabled) btnDec.texture = TextureCache['btn-sm_hover.png']
-	})
 	btnDec.on('pointerdown', () => {
 		if (!btnDec.disabled) btnDec.texture = TextureCache['btn-sm_click.png']
+	})
+	btnDec.on('pointerup', () => {
+		if (!btnDec.disabled) btnDec.texture = TextureCache['btn-sm_hover.png']
 
 		enableButton(btnInc, 'btn-sm_normal.png')
 		plusSign.texture = TextureCache['plus_sign.png']
-		plusSign.disabled = false
+		// plusSign.disabled = false
 
 		if (betMapIndex - 1 === 0) {
 			betMapIndex -= 1
 			minusSign.texture = TextureCache['minus_sign_disabled.png']
-			minusSign.disabled = true
-			disabeButton(btnDec, 'btn-sm_disable.png')
+			// minusSign.disabled = true
+			disableButton(btnDec, 'btn-sm_disable.png')
 		} else if (betMapIndex - 1 > 0) {
 			betMapIndex -= 1
 		}
 
-		totalBetValueText.text = betMap[betMapIndex].toLocaleString('zh-CN', localeSettings)
+		totalBetValueText.text = getLocalizedCurrencyValue(betMap[betMapIndex])
+		coinValueText.text = getLocalizedCurrencyValue(getCoinValue(betMap[betMapIndex]))
 	})
 
 	btnIncContainer.name = 'IncrementButton'
@@ -233,48 +267,50 @@ const setup = function() {
 	alignCenter(btnInc)
 	alignCenter(plusSign)
 	decorateButton(btnInc)
+
 	btnInc.on('mouseover', () => {
 		if (!btnInc.disabled) btnInc.texture = TextureCache['btn-sm_hover.png']
 	})
 	btnInc.on('mouseout', () => {
 		if (!btnInc.disabled) btnInc.texture = TextureCache['btn-sm_normal.png']
 	})
-	btnInc.on('pointerup', () => {
-		if (!btnInc.disabled) btnInc.texture = TextureCache['btn-sm_hover.png']
-	})
 	btnInc.on('pointerdown', () => {
 		if (!btnInc.disabled) btnInc.texture = TextureCache['btn-sm_click.png']
+	})
+	btnInc.on('pointerup', () => {
+		if (!btnInc.disabled) btnInc.texture = TextureCache['btn-sm_hover.png']
 
-		// btnDec.texture = TextureCache['btn-sm_normal.png']
 		minusSign.texture = TextureCache['minus_sign.png']
-		minusSign.disabled = false
+		// minusSign.disabled = false
 		enableButton(btnDec, 'btn-sm_normal.png')
 
 		if (betMapIndex + 1 === betMap.length - 1) {
 			betMapIndex += 1
-			// btnInc.texture = TextureCache['btn-sm_disable.png']
 			plusSign.texture = TextureCache['plus_sign_disabled.png']
-			disabeButton(btnInc, 'btn-sm_disable.png')
-			plusSign.disabled = true
+			// plusSign.disabled = true
+			disableButton(btnInc, 'btn-sm_disable.png')
 		} else if (betMapIndex + 1 < betMap.length - 1) {
 			betMapIndex += 1
 		}
 
-		totalBetValueText.text = betMap[betMapIndex].toLocaleString('zh-CN', localeSettings)
+		totalBetValueText.text = getLocalizedCurrencyValue(betMap[betMapIndex])
+		coinValueText.text = getLocalizedCurrencyValue(getCoinValue(betMap[betMapIndex]))
 	})
 
 	// Coin contaner
-	const coinValue = betMap[betMapIndex] / 15
-	const localizedCoinValue = coinValue.toLocaleString('zh-CN', localeSettings)
 	const coinTitleText = new Text('COIN', boxTitleTextStyle)
-	const coinValueText = new Text(localizedCoinValue, boxValueTextStyle)
+	const coinValueText = new Text(
+		getLocalizedCurrencyValue(getCoinValue(betMap[betMapIndex])),
+		currencyTextStyle
+	)
 
 	coinContainer.name = 'CoinDisplay'
 	coinContainer.position.set(660, 60)
 	coinContainer.addChild(coinBg, coinTitleText, coinValueText)
 
 	coinTitleText.position.set(coinContainer.width / 2 - coinTitleText.width / 2, 15)
-	coinValueText.position.set(coinContainer.width / 2 - coinValueText.width / 2, 45)
+	coinValueText.position.set(coinContainer.width / 2, 75)
+	coinValueText.anchor.set(0.5, 0.5)
 
 	// winBox container
 	const winBoxText = new Text(
@@ -347,6 +383,7 @@ const setup = function() {
 	autoText.position.set(70, autoText.parent.height / 2 - autoText.height / 2)
 	btnAuto.interactive = true
 	btnAuto.buttonMode = true
+
 	btnAuto.on('mouseover', () => (btnAuto.texture = TextureCache['btn_auto_hover.png']))
 	btnAuto.on('mouseout', () => (btnAuto.texture = TextureCache['btn_auto.png']))
 	btnAuto.on('pointerdown', () => (btnAuto.texture = TextureCache['btn_auto_click.png']))
@@ -355,19 +392,141 @@ const setup = function() {
 	spinContainer.name = 'SpinButton'
 	spinContainer.position.set(2100, -60)
 	spinContainer.addChild(btnSpin, spinSign)
+
 	btnSpin.on('mouseover', () => (btnSpin.texture = TextureCache['btn_spin_hover.png']))
 	btnSpin.on('mouseout', () => (btnSpin.texture = TextureCache['btn_spin.png']))
 	btnSpin.on('pointerdown', () => (btnSpin.texture = TextureCache['btn_spin_click.png']))
 	btnSpin.on('pointerup', () => (btnSpin.texture = TextureCache['btn_spin_hover.png']))
+
 	decorateButton(btnSpin)
 	alignCenter(spinSign)
 
-	bottomBarContainer.name = 'BottomBar'
-	bottomBarContainer.position.set(
-		view.width / 2 - bottomBar.width / 2,
+	// Paytable Container
+	paytableContainer.name = 'PaytableBar'
+
+	const paytableBook = {
+		currentPage: 0,
+		pages: 4,
+	}
+
+	paytableLeftButton.name = 'PaytableLeftButton'
+	paytableLeftButton.addChild(paytableLeftBtnBg, paytableLeftArrow)
+	alignCenter(paytableLeftArrow)
+
+	paytableMiddleButton.name = 'PaytableMiddleButton'
+	paytableMiddleButton.addChild(paytableMiddleBtnBg, paytableCross)
+	alignCenter(paytableCross)
+
+	paytableRightButton.name = 'PaytableRightButton'
+	paytableRightButton.addChild(paytableRightBtnBg, paytableRightArrow)
+	alignCenter(paytableRightArrow)
+
+	paytableContainer.addChild(
+		paytableBar,
+		paytableLeftButton,
+		paytableMiddleButton,
+		paytableRightButton
+	)
+
+	paytableLeftButton.position.set(145, 60)
+	paytableMiddleButton.position.set(300, 60)
+	paytableRightButton.position.set(440, 60)
+
+	disableButton(paytableLeftBtnBg)
+	enableButton(paytableMiddleBtnBg)
+	enableButton(paytableRightBtnBg)
+
+	paytableLeftBtnBg.on('mouseover', () => {
+		if (!paytableLeftBtnBg.disabled) {
+			paytableLeftBtnBg.texture = TextureCache['info_bottom_bar_control-left_hover.png']
+		}
+	})
+	paytableLeftBtnBg.on('mouseout', () => {
+		if (!paytableLeftBtnBg.disabled) {
+			paytableLeftBtnBg.texture = TextureCache['info_bottom_bar_control-left_normal.png']
+		}
+	})
+	paytableLeftBtnBg.on('pointerdown', () => {
+		if (!paytableLeftBtnBg.disabled) {
+			paytableLeftBtnBg.texture = TextureCache['info_bottom_bar_control-left_click.png']
+		}
+	})
+	paytableLeftBtnBg.on('pointerup', () => {
+		if (!paytableLeftBtnBg.disabled) {
+			paytableLeftBtnBg.texture = TextureCache['info_bottom_bar_control-left_hover.png']
+		}
+
+		if (paytableBook.currentPage - 1 === 0) {
+			paytableBook.currentPage -= 1
+
+			paytableLeftArrow.texture = TextureCache['info_bottom_bar_control-left-arrow_disabled.png']
+			disableButton(paytableLeftBtnBg, 'info_bottom_bar_control-left_disabled.png')
+		} else if (paytableBook.currentPage - 1 > 0) {
+			paytableBook.currentPage -= 1
+
+			paytableRightArrow.texture = TextureCache['info_bottom_bar_control-right-arrow.png']
+			enableButton(paytableRightBtnBg, 'info_bottom_bar_control-right_normal.png')
+		}
+	})
+
+	paytableRightBtnBg.on('mouseover', () => {
+		if (!paytableRightBtnBg.disabled) {
+			paytableRightBtnBg.texture = TextureCache['info_bottom_bar_control-right_hover.png']
+		}
+	})
+	paytableRightBtnBg.on('mouseout', () => {
+		if (!paytableRightBtnBg.disabled) {
+			paytableRightBtnBg.texture = TextureCache['info_bottom_bar_control-right_normal.png']
+		}
+	})
+	paytableRightBtnBg.on('pointerdown', () => {
+		if (!paytableRightBtnBg.disabled) {
+			paytableRightBtnBg.texture = TextureCache['info_bottom_bar_control-right_click.png']
+		}
+	})
+	paytableRightBtnBg.on('pointerup', () => {
+		if (!paytableRightBtnBg.disabled) {
+			paytableRightBtnBg.texture = TextureCache['info_bottom_bar_control-right_hover.png']
+		}
+
+		if (paytableBook.currentPage + 1 === paytableBook.pages) {
+			paytableBook.currentPage += 1
+
+			paytableRightArrow.texture = TextureCache['info_bottom_bar_control-right-arrow_disabled.png']
+			disableButton(paytableRightBtnBg, 'info_bottom_bar_control-right_disabled.png')
+		} else if (paytableBook.currentPage + 1 < paytableBook.pages) {
+			paytableBook.currentPage += 1
+
+			paytableLeftArrow.texture = TextureCache['info_bottom_bar_control-left-arrow.png']
+			enableButton(paytableLeftBtnBg, 'info_bottom_bar_control-left_normal.png')
+		}
+	})
+
+	paytableMiddleBtnBg.on(
+		'mouseover',
+		() => (paytableMiddleBtnBg.texture = TextureCache['info_bottom_bar_control-middle_hover.png'])
+	)
+	paytableMiddleBtnBg.on(
+		'mouseout',
+		() => (paytableMiddleBtnBg.texture = TextureCache['info_bottom_bar_control-middle_normal.png'])
+	)
+	paytableMiddleBtnBg.on(
+		'pointerdown',
+		() => (paytableMiddleBtnBg.texture = TextureCache['info_bottom_bar_control-middle_click.png'])
+	)
+	paytableMiddleBtnBg.on('pointerup', () => {
+		paytableMiddleBtnBg.texture = TextureCache['info_bottom_bar_control-middle_hover.png']
+		paytableContainer.visible = false
+		bottomBarContainer.visible = true
+	})
+
+	paytableContainer.position.set(
+		view.width / 2 - paytableContainer.width / 2,
 		view.height - bottomBar.height - 170
 	)
 
+	// BottomBar Container
+	bottomBarContainer.name = 'BottomBar'
 	bottomBarContainer.addChild(
 		infoBarContainer,
 		buttonInfoContainer,
@@ -378,7 +537,15 @@ const setup = function() {
 		autoContainer,
 		spinContainer
 	)
-	stage.addChild(bottomBarContainer)
+
+	bottomBarContainer.position.set(
+		view.width / 2 - bottomBar.width / 2,
+		view.height - bottomBar.height - 170
+	)
+
+	paytableContainer.visible = false
+
+	stage.addChild(bottomBarContainer, paytableContainer)
 }
 
 loader
