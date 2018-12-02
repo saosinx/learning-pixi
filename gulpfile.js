@@ -56,7 +56,7 @@ gulp.task('imagemin', (done) => {
 					arithmetic: false, // Use arithmetic coding
 				}),
 				imagemin.optipng({
-					optimizationLevel: 0, // An optimization level between 0 and 7
+					optimizationLevel: 4, // An optimization level between 0 and 7
 					bitDepthReduction: true, // Apply bit depth reduction
 					colorTypeReduction: true, // Apply color type reduction
 					paletteReduction: true, // Apply palette reduction
@@ -122,7 +122,7 @@ gulp.task('watch', (done) => {
 
 gulp.task(
 	'default',
-	gulp.series('clean', gulp.parallel('imagemin', 'build', 'sass', 'pug'), 'connect', 'watch')
+	gulp.series('clean', gulp.parallel('build', 'sass', 'pug'), 'connect', 'watch')
 )
 
 gulp.task('build-prod', gulp.series('clean', gulp.parallel('imagemin', 'uglify', 'sass', 'pug')))
