@@ -5,6 +5,7 @@ const postcss = require('gulp-postcss')
 const pug = require('gulp-pug')
 const sass = require('gulp-sass')
 const sassGlob = require('gulp-sass-glob')
+const fs = require('fs-extra')
 
 const browserify = require('browserify')
 const buffer = require('vinyl-buffer')
@@ -42,6 +43,14 @@ gulp.task('clean', (done) => {
 	done()
 })
 
+gulp.task('assets', (done) => {
+	fs.copy('./src/sounds', './dist/assets/sounds/', (err) => {
+		if (err) return console.error(err)
+		return console.log('Assets copied!')
+	})
+	done()
+})
+
 gulp.task('imagemin', (done) => {
 	gulp
 		.src('src/images/**/*')
@@ -56,7 +65,7 @@ gulp.task('imagemin', (done) => {
 					arithmetic: false, // Use arithmetic coding
 				}),
 				imagemin.optipng({
-					optimizationLevel: 4, // An optimization level between 0 and 7
+					optimizationLevel: 0, // An optimization level between 0 and 7
 					bitDepthReduction: true, // Apply bit depth reduction
 					colorTypeReduction: true, // Apply color type reduction
 					paletteReduction: true, // Apply palette reduction
@@ -122,7 +131,15 @@ gulp.task('watch', (done) => {
 
 gulp.task(
 	'default',
-	gulp.series('clean', gulp.parallel('build', 'sass', 'pug'), 'connect', 'watch')
+	gulp.series(
+		'clean',
+		gulp.parallel('build', 'imagemin', 'assets', 'sass', 'pug'),
+		'connect',
+		'watch'
+	)
 )
 
-gulp.task('build-prod', gulp.series('clean', gulp.parallel('imagemin', 'uglify', 'sass', 'pug')))
+gulp.task(
+	'build-prod',
+	gulp.series('clean', gulp.parallel('assets', 'imagemin', 'uglify', 'sass', 'pug'))
+)

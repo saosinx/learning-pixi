@@ -1,5 +1,8 @@
 import * as PIXI from 'pixi.js'
+import 'pixi-sound'
 import scaleToWindow from './scaleToWindow'
+
+const clickSound = PIXI.sound.Sound.from('assets/sounds/button_click.wav')
 
 const {
 	Application,
@@ -197,6 +200,7 @@ const setup = function() {
 	btnInfo.on('mouseout', () => (btnInfo.texture = TextureCache['btn_normal.png']))
 	btnInfo.on('pointerdown', () => (btnInfo.texture = TextureCache['btn_click.png']))
 	btnInfo.on('pointerup', () => {
+		clickSound.play()
 		btnInfo.texture = TextureCache['btn_hover.png']
 		bottomBarContainer.visible = false
 		paytableContainer.visible = true
@@ -241,11 +245,13 @@ const setup = function() {
 		if (!btnDec.disabled) btnDec.texture = TextureCache['btn-sm_click.png']
 	})
 	btnDec.on('pointerup', () => {
-		if (!btnDec.disabled) btnDec.texture = TextureCache['btn-sm_hover.png']
+		if (!btnDec.disabled) {
+			clickSound.play()
+			btnDec.texture = TextureCache['btn-sm_hover.png']
+		}
 
 		enableButton(btnInc, 'btn-sm_normal.png')
 		plusSign.texture = TextureCache['plus_sign.png']
-		// plusSign.disabled = false
 
 		if (betMapIndex - 1 === 0) {
 			betMapIndex -= 1
@@ -278,7 +284,10 @@ const setup = function() {
 		if (!btnInc.disabled) btnInc.texture = TextureCache['btn-sm_click.png']
 	})
 	btnInc.on('pointerup', () => {
-		if (!btnInc.disabled) btnInc.texture = TextureCache['btn-sm_hover.png']
+		if (!btnInc.disabled) {
+			clickSound.play()
+			btnInc.texture = TextureCache['btn-sm_hover.png']
+		}
 
 		minusSign.texture = TextureCache['minus_sign.png']
 		// minusSign.disabled = false
@@ -350,6 +359,8 @@ const setup = function() {
 	btnTurbo.on('mouseout', () => (btnTurbo.texture = TextureCache['btn_turbo.png']))
 	btnTurbo.on('pointerdown', () => (btnTurbo.texture = TextureCache['btn_turbo_click.png']))
 	btnTurbo.on('pointerup', () => {
+		clickSound.play()
+
 		if (btnTurbo.isOn) {
 			btnTurbo.isOn = !btnTurbo.isOn
 			btnTurbo.texture = TextureCache['btn_turbo_hover.png']
@@ -387,7 +398,10 @@ const setup = function() {
 	btnAuto.on('mouseover', () => (btnAuto.texture = TextureCache['btn_auto_hover.png']))
 	btnAuto.on('mouseout', () => (btnAuto.texture = TextureCache['btn_auto.png']))
 	btnAuto.on('pointerdown', () => (btnAuto.texture = TextureCache['btn_auto_click.png']))
-	btnAuto.on('pointerup', () => (btnAuto.texture = TextureCache['btn_auto_hover.png']))
+	btnAuto.on('pointerup', () => {
+		clickSound.play()
+		btnAuto.texture = TextureCache['btn_auto_hover.png']
+	})
 
 	spinContainer.name = 'SpinButton'
 	spinContainer.position.set(2100, -60)
@@ -396,7 +410,10 @@ const setup = function() {
 	btnSpin.on('mouseover', () => (btnSpin.texture = TextureCache['btn_spin_hover.png']))
 	btnSpin.on('mouseout', () => (btnSpin.texture = TextureCache['btn_spin.png']))
 	btnSpin.on('pointerdown', () => (btnSpin.texture = TextureCache['btn_spin_click.png']))
-	btnSpin.on('pointerup', () => (btnSpin.texture = TextureCache['btn_spin_hover.png']))
+	btnSpin.on('pointerup', () => {
+		clickSound.play()
+		btnSpin.texture = TextureCache['btn_spin_hover.png']
+	})
 
 	decorateButton(btnSpin)
 	alignCenter(spinSign)
@@ -453,6 +470,7 @@ const setup = function() {
 	})
 	paytableLeftBtnBg.on('pointerup', () => {
 		if (!paytableLeftBtnBg.disabled) {
+			clickSound.play()
 			paytableLeftBtnBg.texture = TextureCache['info_bottom_bar_control-left_hover.png']
 		}
 
@@ -486,6 +504,7 @@ const setup = function() {
 	})
 	paytableRightBtnBg.on('pointerup', () => {
 		if (!paytableRightBtnBg.disabled) {
+			clickSound.play()
 			paytableRightBtnBg.texture = TextureCache['info_bottom_bar_control-right_hover.png']
 		}
 
@@ -515,6 +534,7 @@ const setup = function() {
 		() => (paytableMiddleBtnBg.texture = TextureCache['info_bottom_bar_control-middle_click.png'])
 	)
 	paytableMiddleBtnBg.on('pointerup', () => {
+		clickSound.play()
 		paytableMiddleBtnBg.texture = TextureCache['info_bottom_bar_control-middle_hover.png']
 		paytableContainer.visible = false
 		bottomBarContainer.visible = true
