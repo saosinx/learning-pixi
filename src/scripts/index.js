@@ -1,5 +1,24 @@
 import * as PIXI from 'pixi.js'
+import tweenManager from 'pixi-tween'
 import 'pixi-sound'
+
+import {
+	alignCenter,
+	addButtonEventListener,
+	disableButton,
+	enableButton,
+	decorateButton,
+	getLocalizedCurrencyValue,
+	getCoinValue,
+	getBetMap,
+} from './services'
+
+import makeAutoPlayButton from './autoPlayButton'
+import makePlayButton from './playButton'
+import makeSpinSelect from './spinSelect'
+import makeTotalBet from './totalBet'
+import makeTurboPlay from './turboPlay'
+import makeWinBox from './winBox'
 import scaleToWindow from './scaleToWindow'
 
 const clickSound = PIXI.sound.Sound.from('assets/sounds/button_click.wav')
@@ -10,7 +29,6 @@ const {
 	Sprite,
 	Text,
 	TextStyle,
-	Circle,
 	loader,
 	loader: { resources },
 	utils: { TextureCache },
@@ -40,128 +58,40 @@ view.scaleToWindow = scaleToWindow.bind(view)
 window.addEventListener('resize', view.scaleToWindow)
 view.scaleToWindow()
 
-const alignVertical = function(sprite) {
-	sprite.y = sprite.parent.height / 2 - sprite.height / 2
+let state = null
+
+const gameLoop = function(delta) {
+	state(delta)
 }
 
-const alignHorizontal = function(sprite) {
-	sprite.x = sprite.parent.width / 2 - sprite.width / 2
-}
-
-const alignCenter = function(sprite) {
-	alignVertical(sprite)
-	alignHorizontal(sprite)
-}
-
-const addButtonEventListener = function(sprite, events = []) {
-	const texture = sprite.texture.textureCacheIds[0]
-	const re = /(?:\.([^.]+))?$/
-	const textureWithoutExtension = texture.replace(/\.[^/.]+$/, '')
-	const textureExtension = re.exec(texture)[0]
-	events.forEach((event) => {
-		switch (event) {
-			case 'mouseover':
-				sprite.on(event, () => {
-					if (!sprite.disabled) {
-						sprite.texture = TextureCache[`${textureWithoutExtension}_hover${textureExtension}`]
-					}
-				})
-				break
-			case 'pointerdown':
-				sprite.on(event, () => {
-					if (!sprite.disabled) {
-						sprite.texture = TextureCache[`${textureWithoutExtension}_click${textureExtension}`]
-					}
-				})
-				break
-			case 'mouseout':
-				sprite.on(event, () => {
-					if (!sprite.disabled) sprite.texture = TextureCache[texture]
-				})
-				break
-			default:
-				return false
-		}
-	})
-}
-
-const disableButton = function(sprite, texture = null) {
-	if (texture) sprite.texture = TextureCache[texture]
-	sprite.interactive = false
-	sprite.buttonMode = false
-	sprite.disabled = true
-}
-
-const enableButton = function(sprite, texture = null) {
-	if (texture) sprite.texture = TextureCache[texture]
-	sprite.interactive = true
-	sprite.buttonMode = true
-	sprite.disabled = false
-}
-
-const decorateButton = function(sprite) {
-	enableButton(sprite)
-	sprite.hitArea = new Circle(sprite.width / 2, sprite.height / 2, sprite.width / 2)
-}
-
-const getLocalizedCurrencyValue = function(value) {
-	const localizedValue = value.toLocaleString('zh-CN', {
-		style: 'currency',
-		currency: 'CNY',
-		maximumFractionDigits: 2,
-		minimumFractionDigits: 0,
-	})
-
-	return localizedValue
-}
-
-const getCoinValue = function(value) {
-	return value / 15
+const play = function(delta) {
+	PIXI.tweenManager.update()
 }
 
 const setup = function() {
 	const id = resources['assets/images/atlas.json'].textures
 
 	const bottomBar = new Sprite(resources['assets/images/bottom-bar.png'].texture)
-	const paytableBar = new Sprite(id['info-bar.png'])
-	const paytableLeftArrow = new Sprite(id['arrow-left.png'])
-	const paytableCross = new Sprite(id['exit-sign.png'])
-	const paytableRightArrow = new Sprite(id['arrow-right.png'])
-	const paytableLeftBtnBg = new Sprite(id['page-left.png'])
-	const paytableMiddleBtnBg = new Sprite(id['btn-exit.png'])
-	const paytableRightBtnBg = new Sprite(id['page-right.png'])
 	const btnInfo = new Sprite(id['btn.png'])
 	const btnInfoSign = new Sprite(id['info-sign.png'])
-	const totalBetBg = new Sprite(id['totalbet_bg.png'])
 	const coinBg = new Sprite(id['coin_bg.png'])
-	const btnDec = new Sprite(id['btn-sm.png'])
-	const btnInc = new Sprite(id['btn-sm.png'])
-	const minusSign = new Sprite(id['minus-sign.png'])
-	const plusSign = new Sprite(id['plus-sign.png'])
-	const winBoxBg = new Sprite(id['win_bg.png'])
-	const turboOnBg = new Sprite(id['turboplay_bg.png'])
-	const btnTurbo = new Sprite(id['btn-turbo.png'])
-	const btnAuto = new Sprite(id['btn-auto.png'])
-	const btnSpin = new Sprite(id['btn-spin.png'])
-	const spinSign = new Sprite(id['spin-sign.png'])
+	const paytableBar = new Sprite(id['info-bar.png'])
+	const paytableCross = new Sprite(id['exit-sign.png'])
+	const paytableLeftArrow = new Sprite(id['arrow-left.png'])
+	const paytableLeftBtnBg = new Sprite(id['page-left.png'])
+	const paytableMiddleBtnBg = new Sprite(id['btn-exit.png'])
+	const paytableRightArrow = new Sprite(id['arrow-right.png'])
+	const paytableRightBtnBg = new Sprite(id['page-right.png'])
 
-	const paytableLeftButton = new Container()
-	const paytableMiddleButton = new Container()
-	const paytableRightButton = new Container()
-
-	const autoContainer = new Container()
+	const AutoPlay = new Container()
 	const bottomBarContainer = new Container()
-	const btnDecContainer = new Container()
-	const btnIncContainer = new Container()
 	const buttonInfoContainer = new Container()
 	const coinContainer = new Container()
 	const infoBarContainer = new Container()
 	const paytableContainer = new Container()
-	const spinContainer = new Container()
-	const totalBetContainer = new Container()
-	const turboBtnContainer = new Container()
-	const turboContainer = new Container()
-	const winBoxContainer = new Container()
+	const paytableLeftButton = new Container()
+	const paytableMiddleButton = new Container()
+	const paytableRightButton = new Container()
 
 	const textStyle = new TextStyle({
 		fontFamily: 'Noto Sans CJK SC Black',
@@ -179,40 +109,30 @@ const setup = function() {
 		dropShadowDistance: 2,
 	})
 
-	const infoBarTextStyle = new TextStyle({
+	const yellowTextStyle = new TextStyle({
 		...textStyle,
 		fill: '#ffea00',
 		dropShadowColor: '#450005',
 	})
 
-	const boxTitleTextStyle = new TextStyle({
+	const pinkTextStyle = new TextStyle({
 		...textStyle,
 		fill: '#ff6972',
 		dropShadowColor: '#4e0005',
 	})
 
-	const currencyTextStyle = new TextStyle({
+	const darkYellowTextStyle = new TextStyle({
 		...textStyle,
 		fill: '#ffd100',
 		fontSize: 36,
 		dropShadowColor: '#710008',
 	})
 
-	const betMap = [5]
-	for (let i = 0; i < 6; i += 1) {
-		const base = betMap[betMap.length - 1]
-		for (let j = 0; j < 3; j += 1) {
-			if (i === 0 && j === 2) continue
-			betMap.push(base * 2 + base * j)
-		}
-	}
-
-	let betMapIndex = 6
 	bottomBarContainer.addChild(bottomBar)
 
 	// Infobar
-	const infoBarLeftLabel = new Text('Line 31 wins GBP2', infoBarTextStyle)
-	const infoBarRightLabel = new Text('Click spin to start', infoBarTextStyle)
+	const infoBarLeftLabel = new Text('Line 31 wins GBP2', yellowTextStyle)
+	const infoBarRightLabel = new Text('Click spin to start', yellowTextStyle)
 
 	infoBarContainer.name = 'Infobar'
 	infoBarContainer.addChild(infoBarLeftLabel, infoBarRightLabel)
@@ -236,93 +156,15 @@ const setup = function() {
 		paytableContainer.visible = true
 	})
 
-	// Totalbet container
-	const totalBetTitleText = new Text('TOTAL BET', boxTitleTextStyle)
-	const totalBetValueText = new Text(
-		getLocalizedCurrencyValue(betMap[betMapIndex]),
-		currencyTextStyle
-	)
-
-	totalBetContainer.name = 'TotalBet'
-	totalBetContainer.position.set(255, 60)
-	totalBetContainer.addChild(
-		totalBetBg,
-		totalBetTitleText,
-		totalBetValueText,
-		btnDecContainer,
-		btnIncContainer
-	)
-
-	totalBetTitleText.position.set(totalBetContainer.width / 2 - totalBetTitleText.width / 2, 15)
-	totalBetValueText.position.set(totalBetContainer.width / 2, 75)
-	totalBetValueText.anchor.set(0.5, 0.5)
-
-	btnDecContainer.name = 'DecrementButton'
-	btnDecContainer.position.set(10, 10)
-	btnDecContainer.addChild(btnDec, minusSign)
-
-	alignCenter(minusSign)
-	alignCenter(btnDec)
-	decorateButton(btnDec)
-
-	addButtonEventListener(btnDec, ['mouseover', 'mouseout', 'pointerdown'])
-	btnDec.on('pointerup', () => {
-		if (!btnDec.disabled) {
-			clickSound.play()
-			btnDec.texture = TextureCache['btn-sm_hover.png']
-		}
-
-		enableButton(btnInc, 'btn-sm.png')
-		plusSign.texture = TextureCache['plus-sign.png']
-
-		if (betMapIndex - 1 === 0) {
-			betMapIndex -= 1
-			minusSign.texture = TextureCache['minus-sign_disabled.png']
-			disableButton(btnDec, 'btn-sm_disabled.png')
-		} else if (betMapIndex - 1 > 0) {
-			betMapIndex -= 1
-		}
-
-		totalBetValueText.text = getLocalizedCurrencyValue(betMap[betMapIndex])
-		coinValueText.text = getLocalizedCurrencyValue(getCoinValue(betMap[betMapIndex]))
-	})
-
-	btnIncContainer.name = 'IncrementButton'
-	btnIncContainer.position.set(btnIncContainer.parent.width - btnInc.width - 10, 10)
-	btnIncContainer.addChild(btnInc, plusSign)
-
-	alignCenter(btnInc)
-	alignCenter(plusSign)
-	decorateButton(btnInc)
-
-	addButtonEventListener(btnInc, ['mouseover', 'mouseout', 'pointerdown'])
-	btnInc.on('pointerup', () => {
-		if (!btnInc.disabled) {
-			clickSound.play()
-			btnInc.texture = TextureCache['btn-sm_hover.png']
-		}
-
-		minusSign.texture = TextureCache['minus-sign.png']
-		enableButton(btnDec, 'btn-sm.png')
-
-		if (betMapIndex + 1 === betMap.length - 1) {
-			betMapIndex += 1
-			plusSign.texture = TextureCache['plus-sign_disabled.png']
-			disableButton(btnInc, 'btn-sm_disabled.png')
-		} else if (betMapIndex + 1 < betMap.length - 1) {
-			betMapIndex += 1
-		}
-
-		totalBetValueText.text = getLocalizedCurrencyValue(betMap[betMapIndex])
-		coinValueText.text = getLocalizedCurrencyValue(getCoinValue(betMap[betMapIndex]))
-	})
-
 	// Coin contaner
-	const coinTitleText = new Text('COIN', boxTitleTextStyle)
+	const betMap = getBetMap()
+	const coinTitleText = new Text('COIN', pinkTextStyle)
 	const coinValueText = new Text(
-		getLocalizedCurrencyValue(getCoinValue(betMap[betMapIndex])),
-		currencyTextStyle
+		getLocalizedCurrencyValue(getCoinValue(betMap.bets[betMap.index])),
+		darkYellowTextStyle
 	)
+
+	const TotalBet = makeTotalBet(id, { pinkTextStyle, darkYellowTextStyle, coinValueText })
 
 	coinContainer.name = 'CoinDisplay'
 	coinContainer.position.set(660, 60)
@@ -332,100 +174,57 @@ const setup = function() {
 	coinValueText.position.set(coinContainer.width / 2, 75)
 	coinValueText.anchor.set(0.5, 0.5)
 
-	// winBox container
-	const winBoxText = new Text(
-		'GOOD LUCK!',
-		new TextStyle({
-			...darkTextstyle,
-			fontSize: 100,
-			fill: '#ffe400',
-			dropShadowColor: '#710008',
-			dropShadowDistance: 4,
-		})
-	)
+	const WinBox = makeWinBox(id, { darkTextstyle })
+	const TurboPlay = makeTurboPlay(id, { darkTextstyle })
+	const AutoPlayButton = makeAutoPlayButton(id, { darkTextstyle })
+	const SpinSelect = makeSpinSelect(id, { darkYellowTextStyle })
 
-	winBoxContainer.name = 'WinBox'
-	winBoxContainer.position.set(857, 17)
-	winBoxContainer.addChild(winBoxBg, winBoxText)
-	winBoxText.position.set(
-		winBoxText.parent.width / 2 - winBoxText.width / 2,
-		winBoxText.parent.height / 2 - winBoxText.height / 2
-	)
+	const spinSelectCurtain = new PIXI.Graphics()
+	spinSelectCurtain.beginFill(0x000000)
+	spinSelectCurtain.drawRect(1895, -240, SpinSelect.width, SpinSelect.height)
+	spinSelectCurtain.endFill()
+	SpinSelect.mask = spinSelectCurtain
 
-	// Turboplay button
-	const btnTurboText = new Text('TURBO', darkTextstyle)
+	AutoPlay.addChild(SpinSelect, AutoPlayButton)
+	AutoPlay.position.set(1895, 60)
 
-	turboBtnContainer.name = 'TurboPlayButton'
-	turboBtnContainer.addChild(btnTurbo, btnTurboText)
+	AutoPlay.interactive = true
+	AutoPlay.buttonMode = true
 
-	turboContainer.name = 'TurboPlay'
-	turboContainer.position.set(1720, 60)
-	turboContainer.addChild(turboOnBg, turboBtnContainer)
-
-	btnTurbo.interactive = true
-	btnTurbo.buttonMode = true
-	btnTurbo.isOn = true
-
-	addButtonEventListener(btnTurbo, ['mouseover', 'mouseout', 'pointerdown'])
-
-	btnTurbo.on('pointerup', () => {
-		clickSound.play()
-
-		if (btnTurbo.isOn) {
-			btnTurbo.isOn = !btnTurbo.isOn
-			btnTurbo.texture = TextureCache['btn-turbo_hover.png']
-			turboOnBg.texture = TextureCache['turboplay_bg_disabled.png']
-			turboBtnContainer.position.set(
-				turboBtnContainer.parent.width / 2 - turboBtnContainer.width / 2,
-				turboContainer.height - btnTurbo.height
-			)
+	const spinSelectMouseOutHandler = function(delta) {
+		if (SpinSelect.y >= 0) {
+			SpinSelect.y = 0
 		} else {
-			btnTurbo.isOn = !btnTurbo.isOn
-			btnTurbo.texture = TextureCache['btn-turbo_hover.png']
-			turboOnBg.texture = TextureCache['turboplay_bg.png']
-			turboBtnContainer.position.set(
-				turboBtnContainer.parent.width / 2 - turboBtnContainer.width / 2,
-				12
-			)
+			SpinSelect.y += 1 * delta
 		}
+
+		app.renderer.render(app.stage)
+	}
+	const spinSelectMouseOverHandler = function(delta) {
+		if (SpinSelect.y <= -300) {
+			SpinSelect.y = -300
+		} else {
+			SpinSelect.y -= 1 * delta
+		}
+
+		app.renderer.render(app.stage)
+	}
+
+	const autoPlayTicker = new PIXI.ticker.Ticker()
+	autoPlayTicker.autoStart = true
+	autoPlayTicker.speed = 10
+
+	AutoPlay.on('mouseover', () => {
+		autoPlayTicker.remove(spinSelectMouseOutHandler)
+		autoPlayTicker.add(spinSelectMouseOverHandler)
+	}).on('mouseout', () => {
+		autoPlayTicker.remove(spinSelectMouseOverHandler)
+		autoPlayTicker.add(spinSelectMouseOutHandler)
 	})
 
-	alignCenter(btnTurboText)
-	turboBtnContainer.position.set(
-		turboBtnContainer.parent.width / 2 - turboBtnContainer.width / 2,
-		12
-	)
-
-	// Autoplay button
-	const autoText = new Text('AUTO', { ...darkTextstyle, fontSize: 42 })
-
-	autoContainer.name = 'AutoPlayButton'
-	autoContainer.position.set(1895, 60)
-	autoContainer.addChild(btnAuto, autoText)
-
-	autoText.position.set(70, autoText.parent.height / 2 - autoText.height / 2)
-
-	btnAuto.interactive = true
-	btnAuto.buttonMode = true
-
-	addButtonEventListener(btnAuto, ['mouseover', 'mouseout', 'pointerdown'])
-	btnAuto.on('pointerup', () => {
-		clickSound.play()
-		btnAuto.texture = TextureCache['btn-auto_hover.png']
-	})
-
-	spinContainer.name = 'SpinButton'
-	spinContainer.position.set(2100, -60)
-	spinContainer.addChild(btnSpin, spinSign)
-
-	addButtonEventListener(btnSpin, ['mouseover', 'mouseout', 'pointerdown'])
-	btnSpin.on('pointerup', () => {
-		clickSound.play()
-		btnSpin.texture = TextureCache['btn-spin_hover.png']
-	})
-
-	decorateButton(btnSpin)
-	alignCenter(spinSign)
+	// Play button
+	const PlayButton = makePlayButton(id)
+	PlayButton.startSpinRotating()
 
 	// Paytable Container
 	paytableContainer.name = 'PaytableBar'
@@ -532,12 +331,13 @@ const setup = function() {
 	bottomBarContainer.addChild(
 		infoBarContainer,
 		buttonInfoContainer,
-		totalBetContainer,
+		TotalBet,
 		coinContainer,
-		winBoxContainer,
-		turboContainer,
-		autoContainer,
-		spinContainer
+		WinBox,
+		TurboPlay,
+		AutoPlay,
+		PlayButton,
+		spinSelectCurtain
 	)
 
 	bottomBarContainer.position.set(
@@ -548,6 +348,9 @@ const setup = function() {
 	paytableContainer.visible = false
 
 	stage.addChild(bottomBarContainer, paytableContainer)
+
+	state = play
+	app.ticker.add((delta) => gameLoop(delta))
 }
 
 loader

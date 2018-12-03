@@ -63,6 +63,7 @@
   },
   "dependencies": {
     "pixi-sound": "^2.0.4",
+    "pixi-tween": "^0.2.0",
     "pixi.js": "^4.8.2"
   }
 }

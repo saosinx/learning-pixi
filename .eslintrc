@@ -15,6 +15,7 @@
       "warn",
       "never"
     ],
+    "object-curly-newline": "off",
     "no-continue": "off",
     "no-shadow": "off",
     "no-param-reassign": "off",
