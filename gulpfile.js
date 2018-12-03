@@ -46,7 +46,7 @@ gulp.task('clean', (done) => {
 gulp.task('assets', (done) => {
 	fs.copy('./src/sounds', './dist/assets/sounds/', (err) => {
 		if (err) return console.error(err)
-		return console.log('Assets copied!')
+		return console.log('sounds copied!')
 	})
 	done()
 })
