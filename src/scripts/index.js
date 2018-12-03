@@ -53,6 +53,38 @@ const alignCenter = function(sprite) {
 	alignHorizontal(sprite)
 }
 
+const addButtonEventListener = function(sprite, events = []) {
+	const texture = sprite.texture.textureCacheIds[0]
+	const re = /(?:\.([^.]+))?$/
+	const textureWithoutExtension = texture.replace(/\.[^/.]+$/, '')
+	const textureExtension = re.exec(texture)[0]
+	events.forEach((event) => {
+		switch (event) {
+			case 'mouseover':
+				sprite.on(event, () => {
+					if (!sprite.disabled) {
+						sprite.texture = TextureCache[`${textureWithoutExtension}_hover${textureExtension}`]
+					}
+				})
+				break
+			case 'pointerdown':
+				sprite.on(event, () => {
+					if (!sprite.disabled) {
+						sprite.texture = TextureCache[`${textureWithoutExtension}_click${textureExtension}`]
+					}
+				})
+				break
+			case 'mouseout':
+				sprite.on(event, () => {
+					if (!sprite.disabled) sprite.texture = TextureCache[texture]
+				})
+				break
+			default:
+				return false
+		}
+	})
+}
+
 const disableButton = function(sprite, texture = null) {
 	if (texture) sprite.texture = TextureCache[texture]
 	sprite.interactive = false
@@ -92,10 +124,10 @@ const setup = function() {
 
 	const bottomBar = new Sprite(resources['assets/images/bottom-bar.png'].texture)
 	const paytableBar = new Sprite(id['info-bar.png'])
-	const paytableLeftArrow = new Sprite(id['arrow-left_disabled.png'])
+	const paytableLeftArrow = new Sprite(id['arrow-left.png'])
 	const paytableCross = new Sprite(id['exit-sign.png'])
 	const paytableRightArrow = new Sprite(id['arrow-right.png'])
-	const paytableLeftBtnBg = new Sprite(id['page-left_disabled.png'])
+	const paytableLeftBtnBg = new Sprite(id['page-left.png'])
 	const paytableMiddleBtnBg = new Sprite(id['btn-exit.png'])
 	const paytableRightBtnBg = new Sprite(id['page-right.png'])
 	const btnInfo = new Sprite(id['btn.png'])
@@ -196,9 +228,7 @@ const setup = function() {
 	decorateButton(btnInfo)
 	alignCenter(btnInfoSign)
 
-	btnInfo.on('mouseover', () => (btnInfo.texture = TextureCache['btn_hover.png']))
-	btnInfo.on('mouseout', () => (btnInfo.texture = TextureCache['btn.png']))
-	btnInfo.on('pointerdown', () => (btnInfo.texture = TextureCache['btn_click.png']))
+	addButtonEventListener(btnInfo, ['mouseover', 'mouseout', 'pointerdown'])
 	btnInfo.on('pointerup', () => {
 		clickSound.play()
 		btnInfo.texture = TextureCache['btn_hover.png']
@@ -235,15 +265,7 @@ const setup = function() {
 	alignCenter(btnDec)
 	decorateButton(btnDec)
 
-	btnDec.on('mouseover', () => {
-		if (!btnDec.disabled) btnDec.texture = TextureCache['btn-sm_hover.png']
-	})
-	btnDec.on('mouseout', () => {
-		if (!btnDec.disabled) btnDec.texture = TextureCache['btn-sm.png']
-	})
-	btnDec.on('pointerdown', () => {
-		if (!btnDec.disabled) btnDec.texture = TextureCache['btn-sm_click.png']
-	})
+	addButtonEventListener(btnDec, ['mouseover', 'mouseout', 'pointerdown'])
 	btnDec.on('pointerup', () => {
 		if (!btnDec.disabled) {
 			clickSound.play()
@@ -256,7 +278,6 @@ const setup = function() {
 		if (betMapIndex - 1 === 0) {
 			betMapIndex -= 1
 			minusSign.texture = TextureCache['minus-sign_disabled.png']
-			// minusSign.disabled = true
 			disableButton(btnDec, 'btn-sm_disabled.png')
 		} else if (betMapIndex - 1 > 0) {
 			betMapIndex -= 1
@@ -274,15 +295,7 @@ const setup = function() {
 	alignCenter(plusSign)
 	decorateButton(btnInc)
 
-	btnInc.on('mouseover', () => {
-		if (!btnInc.disabled) btnInc.texture = TextureCache['btn-sm_hover.png']
-	})
-	btnInc.on('mouseout', () => {
-		if (!btnInc.disabled) btnInc.texture = TextureCache['btn-sm.png']
-	})
-	btnInc.on('pointerdown', () => {
-		if (!btnInc.disabled) btnInc.texture = TextureCache['btn-sm_click.png']
-	})
+	addButtonEventListener(btnInc, ['mouseover', 'mouseout', 'pointerdown'])
 	btnInc.on('pointerup', () => {
 		if (!btnInc.disabled) {
 			clickSound.play()
@@ -290,13 +303,11 @@ const setup = function() {
 		}
 
 		minusSign.texture = TextureCache['minus-sign.png']
-		// minusSign.disabled = false
 		enableButton(btnDec, 'btn-sm.png')
 
 		if (betMapIndex + 1 === betMap.length - 1) {
 			betMapIndex += 1
 			plusSign.texture = TextureCache['plus-sign_disabled.png']
-			// plusSign.disabled = true
 			disableButton(btnInc, 'btn-sm_disabled.png')
 		} else if (betMapIndex + 1 < betMap.length - 1) {
 			betMapIndex += 1
@@ -355,9 +366,8 @@ const setup = function() {
 	btnTurbo.buttonMode = true
 	btnTurbo.isOn = true
 
-	btnTurbo.on('mouseover', () => (btnTurbo.texture = TextureCache['btn-turbo_hover.png']))
-	btnTurbo.on('mouseout', () => (btnTurbo.texture = TextureCache['btn-turbo.png']))
-	btnTurbo.on('pointerdown', () => (btnTurbo.texture = TextureCache['btn-turbo_click.png']))
+	addButtonEventListener(btnTurbo, ['mouseover', 'mouseout', 'pointerdown'])
+
 	btnTurbo.on('pointerup', () => {
 		clickSound.play()
 
@@ -388,16 +398,17 @@ const setup = function() {
 
 	// Autoplay button
 	const autoText = new Text('AUTO', { ...darkTextstyle, fontSize: 42 })
+
 	autoContainer.name = 'AutoPlayButton'
 	autoContainer.position.set(1895, 60)
 	autoContainer.addChild(btnAuto, autoText)
+
 	autoText.position.set(70, autoText.parent.height / 2 - autoText.height / 2)
+
 	btnAuto.interactive = true
 	btnAuto.buttonMode = true
 
-	btnAuto.on('mouseover', () => (btnAuto.texture = TextureCache['btn-auto_hover.png']))
-	btnAuto.on('mouseout', () => (btnAuto.texture = TextureCache['btn-auto.png']))
-	btnAuto.on('pointerdown', () => (btnAuto.texture = TextureCache['btn-auto_click.png']))
+	addButtonEventListener(btnAuto, ['mouseover', 'mouseout', 'pointerdown'])
 	btnAuto.on('pointerup', () => {
 		clickSound.play()
 		btnAuto.texture = TextureCache['btn-auto_hover.png']
@@ -407,9 +418,7 @@ const setup = function() {
 	spinContainer.position.set(2100, -60)
 	spinContainer.addChild(btnSpin, spinSign)
 
-	btnSpin.on('mouseover', () => (btnSpin.texture = TextureCache['btn-spin_hover.png']))
-	btnSpin.on('mouseout', () => (btnSpin.texture = TextureCache['btn-spin.png']))
-	btnSpin.on('pointerdown', () => (btnSpin.texture = TextureCache['btn-spin_click.png']))
+	addButtonEventListener(btnSpin, ['mouseover', 'mouseout', 'pointerdown'])
 	btnSpin.on('pointerup', () => {
 		clickSound.play()
 		btnSpin.texture = TextureCache['btn-spin_hover.png']
@@ -424,6 +433,16 @@ const setup = function() {
 	const paytableBook = {
 		currentPage: 0,
 		pages: 4,
+	}
+
+	const initPaytable = function() {
+		if (paytableBook.currentPage === 0) {
+			paytableLeftArrow.texture = TextureCache['arrow-left_disabled.png']
+			disableButton(paytableLeftBtnBg, 'page-left_disabled.png')
+		} else if (paytableBook.currentPage === paytableBook.pages) {
+			paytableRightArrow.texture = TextureCache['arrow-right_disabled.png']
+			disableButton(paytableRightBtnBg, 'page-right_disabled.png')
+		}
 	}
 
 	paytableLeftButton.name = 'PaytableLeftButton'
@@ -453,21 +472,7 @@ const setup = function() {
 	enableButton(paytableMiddleBtnBg)
 	enableButton(paytableRightBtnBg)
 
-	paytableLeftBtnBg.on('mouseover', () => {
-		if (!paytableLeftBtnBg.disabled) {
-			paytableLeftBtnBg.texture = TextureCache['page-left_hover.png']
-		}
-	})
-	paytableLeftBtnBg.on('mouseout', () => {
-		if (!paytableLeftBtnBg.disabled) {
-			paytableLeftBtnBg.texture = TextureCache['page-left.png']
-		}
-	})
-	paytableLeftBtnBg.on('pointerdown', () => {
-		if (!paytableLeftBtnBg.disabled) {
-			paytableLeftBtnBg.texture = TextureCache['page-left_click.png']
-		}
-	})
+	addButtonEventListener(paytableLeftBtnBg, ['mouseover', 'mouseout', 'pointerdown'])
 	paytableLeftBtnBg.on('pointerup', () => {
 		if (!paytableLeftBtnBg.disabled) {
 			clickSound.play()
@@ -487,21 +492,7 @@ const setup = function() {
 		}
 	})
 
-	paytableRightBtnBg.on('mouseover', () => {
-		if (!paytableRightBtnBg.disabled) {
-			paytableRightBtnBg.texture = TextureCache['page-right_hover.png']
-		}
-	})
-	paytableRightBtnBg.on('mouseout', () => {
-		if (!paytableRightBtnBg.disabled) {
-			paytableRightBtnBg.texture = TextureCache['page-right.png']
-		}
-	})
-	paytableRightBtnBg.on('pointerdown', () => {
-		if (!paytableRightBtnBg.disabled) {
-			paytableRightBtnBg.texture = TextureCache['page-right_click.png']
-		}
-	})
+	addButtonEventListener(paytableRightBtnBg, ['mouseover', 'mouseout', 'pointerdown'])
 	paytableRightBtnBg.on('pointerup', () => {
 		if (!paytableRightBtnBg.disabled) {
 			clickSound.play()
@@ -521,18 +512,7 @@ const setup = function() {
 		}
 	})
 
-	paytableMiddleBtnBg.on(
-		'mouseover',
-		() => (paytableMiddleBtnBg.texture = TextureCache['btn-exit_hover.png'])
-	)
-	paytableMiddleBtnBg.on(
-		'mouseout',
-		() => (paytableMiddleBtnBg.texture = TextureCache['btn-exit.png'])
-	)
-	paytableMiddleBtnBg.on(
-		'pointerdown',
-		() => (paytableMiddleBtnBg.texture = TextureCache['btn-exit_click.png'])
-	)
+	addButtonEventListener(paytableMiddleBtnBg, ['mouseover', 'mouseout', 'pointerdown'])
 	paytableMiddleBtnBg.on('pointerup', () => {
 		clickSound.play()
 		paytableMiddleBtnBg.texture = TextureCache['btn-exit_hover.png']
@@ -544,6 +524,8 @@ const setup = function() {
 		view.width / 2 - paytableContainer.width / 2,
 		view.height - bottomBar.height - 170
 	)
+
+	initPaytable()
 
 	// BottomBar Container
 	bottomBarContainer.name = 'BottomBar'
