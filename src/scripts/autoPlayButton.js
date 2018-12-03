@@ -1,8 +1,6 @@
 import * as PIXI from 'pixi.js'
 import 'pixi-sound'
 
-const clickSound = PIXI.sound.Sound.from('assets/sounds/button_click.wav')
-
 const {
 	Container,
 	Sprite,
@@ -13,14 +11,16 @@ const {
 export default function makeAutoPlayButton(id, { darkTextstyle }) {
 	const btnAuto = new Sprite(id['btn-auto.png'])
 
-	const AutoPlay = new Container()
+	const AutoPlayButton = new Container()
 
 	const textStyle = { ...darkTextstyle, fontSize: 36 }
 
 	const autoText = new Text('AUTO', textStyle)
 
-	AutoPlay.name = 'AutoPlayButton'
-	AutoPlay.addChild(btnAuto, autoText)
+	const clickSound = PIXI.sound.Sound.from('assets/sounds/button_click.wav')
+
+	AutoPlayButton.name = 'AutoPlayButton'
+	AutoPlayButton.addChild(btnAuto, autoText)
 
 	autoText.position.set(70, autoText.parent.height / 2 - autoText.height / 2)
 
@@ -50,5 +50,5 @@ export default function makeAutoPlayButton(id, { darkTextstyle }) {
 		btnAuto.texture = TextureCache['btn-auto_hover.png']
 	})
 
-	return AutoPlay
+	return AutoPlayButton
 }

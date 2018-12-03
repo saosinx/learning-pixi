@@ -3,8 +3,6 @@ import 'pixi-sound'
 
 import { addButtonEventListener, decorateButton } from './services'
 
-const clickSound = PIXI.sound.Sound.from('assets/sounds/button_click.wav')
-
 const {
 	Container,
 	Sprite,
@@ -16,6 +14,8 @@ export default function makePlayButton(id) {
 	const spinSign = new Sprite(id['spin-sign.png'])
 
 	const PlayButton = new Container()
+
+	const clickSound = PIXI.sound.Sound.from('assets/sounds/button_click.wav')
 
 	PlayButton.name = 'SpinButton'
 	PlayButton.position.set(2100, -60)

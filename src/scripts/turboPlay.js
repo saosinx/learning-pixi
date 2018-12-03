@@ -3,8 +3,6 @@ import 'pixi-sound'
 
 import { alignCenter, addButtonEventListener } from './services'
 
-const clickSound = PIXI.sound.Sound.from('assets/sounds/button_click.wav')
-
 const {
 	Container,
 	Sprite,
@@ -20,6 +18,8 @@ export default function makeTurboPlay(id, { darkTextstyle }) {
 	const TurboPlayButton = new Container()
 
 	const btnTurboText = new Text('TURBO', darkTextstyle)
+
+	const clickSound = PIXI.sound.Sound.from('assets/sounds/button_click.wav')
 
 	TurboPlayButton.name = 'TurboPlayButton'
 	TurboPlayButton.addChild(turboPlayBtn, btnTurboText)

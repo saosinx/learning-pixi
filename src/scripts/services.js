@@ -51,18 +51,30 @@ const addButtonEventListener = function(sprite, events = []) {
 	})
 }
 
+const makeNonInteractive = function(obj) {
+	obj.interactive = false
+	obj.buttonMode = false
+	return obj
+}
+
+const makeInteractive = function(obj) {
+	obj.interactive = true
+	obj.buttonMode = true
+	return obj
+}
+
 const disableButton = function(sprite, texture = null) {
 	if (texture) sprite.texture = TextureCache[texture]
-	sprite.interactive = false
-	sprite.buttonMode = false
+	makeNonInteractive(sprite)
 	sprite.disabled = true
+	return sprite
 }
 
 const enableButton = function(sprite, texture = null) {
 	if (texture) sprite.texture = TextureCache[texture]
-	sprite.interactive = true
-	sprite.buttonMode = true
+	makeInteractive(sprite)
 	sprite.disabled = false
+	return sprite
 }
 
 const decorateButton = function(sprite) {
@@ -108,6 +120,8 @@ export {
 	alignCenter,
 	alignHorizontal,
 	alignVertical,
+	makeNonInteractive,
+	makeInteractive,
 	decorateButton,
 	disableButton,
 	enableButton,

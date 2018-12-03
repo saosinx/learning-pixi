@@ -12,8 +12,6 @@ import {
 	getBetMap,
 } from './services'
 
-const clickSound = PIXI.sound.Sound.from('assets/sounds/button_click.wav')
-
 const {
 	Container,
 	Sprite,
@@ -31,6 +29,8 @@ export default function makeTotalBet(id, { pinkTextStyle, darkYellowTextStyle, c
 	const TotalBet = new Container()
 	const DecrementButton = new Container()
 	const IncrementButton = new Container()
+
+	const clickSound = PIXI.sound.Sound.from('assets/sounds/button_click.wav')
 
 	const betMap = getBetMap()
 

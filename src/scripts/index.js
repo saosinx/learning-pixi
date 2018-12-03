@@ -2,16 +2,7 @@ import * as PIXI from 'pixi.js'
 import tweenManager from 'pixi-tween'
 import 'pixi-sound'
 
-import {
-	alignCenter,
-	addButtonEventListener,
-	disableButton,
-	enableButton,
-	decorateButton,
-	getLocalizedCurrencyValue,
-	getCoinValue,
-	getBetMap,
-} from './services'
+import { getLocalizedCurrencyValue, getCoinValue, getBetMap } from './services'
 
 import makeAutoPlayButton from './autoPlayButton'
 import makePlayButton from './playButton'
@@ -20,6 +11,8 @@ import makeTotalBet from './totalBet'
 import makeTurboPlay from './turboPlay'
 import makeWinBox from './winBox'
 import scaleToWindow from './scaleToWindow'
+import makePaytable from './paytable'
+import makeInfoButton from './infoButton'
 
 const clickSound = PIXI.sound.Sound.from('assets/sounds/button_click.wav')
 
@@ -72,26 +65,12 @@ const setup = function() {
 	const id = resources['assets/images/atlas.json'].textures
 
 	const bottomBar = new Sprite(resources['assets/images/bottom-bar.png'].texture)
-	const btnInfo = new Sprite(id['btn.png'])
-	const btnInfoSign = new Sprite(id['info-sign.png'])
 	const coinBg = new Sprite(id['coin_bg.png'])
-	const paytableBar = new Sprite(id['info-bar.png'])
-	const paytableCross = new Sprite(id['exit-sign.png'])
-	const paytableLeftArrow = new Sprite(id['arrow-left.png'])
-	const paytableLeftBtnBg = new Sprite(id['page-left.png'])
-	const paytableMiddleBtnBg = new Sprite(id['btn-exit.png'])
-	const paytableRightArrow = new Sprite(id['arrow-right.png'])
-	const paytableRightBtnBg = new Sprite(id['page-right.png'])
 
 	const AutoPlay = new Container()
 	const bottomBarContainer = new Container()
-	const buttonInfoContainer = new Container()
 	const coinContainer = new Container()
 	const infoBarContainer = new Container()
-	const paytableContainer = new Container()
-	const paytableLeftButton = new Container()
-	const paytableMiddleButton = new Container()
-	const paytableRightButton = new Container()
 
 	const textStyle = new TextStyle({
 		fontFamily: 'Noto Sans CJK SC Black',
@@ -141,19 +120,12 @@ const setup = function() {
 	infoBarRightLabel.x = bottomBarContainer.width - infoBarRightLabel.width - 555
 
 	// Info Button
-	buttonInfoContainer.name = 'InfoButton'
-	buttonInfoContainer.position.set(130, 60)
-	buttonInfoContainer.addChild(btnInfo, btnInfoSign)
-
-	decorateButton(btnInfo)
-	alignCenter(btnInfoSign)
-
-	addButtonEventListener(btnInfo, ['mouseover', 'mouseout', 'pointerdown'])
-	btnInfo.on('pointerup', () => {
+	const InfoButton = makeInfoButton(id)
+	InfoButton.on('pointerup', () => {
 		clickSound.play()
-		btnInfo.texture = TextureCache['btn_hover.png']
+		InfoButton.infoBtnBg.texture = TextureCache['btn_hover.png']
 		bottomBarContainer.visible = false
-		paytableContainer.visible = true
+		Paytable.visible = true
 	})
 
 	// Coin contaner
@@ -227,110 +199,21 @@ const setup = function() {
 	PlayButton.startSpinRotating()
 
 	// Paytable Container
-	paytableContainer.name = 'PaytableBar'
-
-	const paytableBook = {
-		currentPage: 0,
-		pages: 4,
-	}
-
-	const initPaytable = function() {
-		if (paytableBook.currentPage === 0) {
-			paytableLeftArrow.texture = TextureCache['arrow-left_disabled.png']
-			disableButton(paytableLeftBtnBg, 'page-left_disabled.png')
-		} else if (paytableBook.currentPage === paytableBook.pages) {
-			paytableRightArrow.texture = TextureCache['arrow-right_disabled.png']
-			disableButton(paytableRightBtnBg, 'page-right_disabled.png')
-		}
-	}
-
-	paytableLeftButton.name = 'PaytableLeftButton'
-	paytableLeftButton.addChild(paytableLeftBtnBg, paytableLeftArrow)
-	alignCenter(paytableLeftArrow)
-
-	paytableMiddleButton.name = 'PaytableMiddleButton'
-	paytableMiddleButton.addChild(paytableMiddleBtnBg, paytableCross)
-	alignCenter(paytableCross)
-
-	paytableRightButton.name = 'PaytableRightButton'
-	paytableRightButton.addChild(paytableRightBtnBg, paytableRightArrow)
-	alignCenter(paytableRightArrow)
-
-	paytableContainer.addChild(
-		paytableBar,
-		paytableLeftButton,
-		paytableMiddleButton,
-		paytableRightButton
-	)
-
-	paytableLeftButton.position.set(145, 60)
-	paytableMiddleButton.position.set(300, 60)
-	paytableRightButton.position.set(440, 60)
-
-	disableButton(paytableLeftBtnBg)
-	enableButton(paytableMiddleBtnBg)
-	enableButton(paytableRightBtnBg)
-
-	addButtonEventListener(paytableLeftBtnBg, ['mouseover', 'mouseout', 'pointerdown'])
-	paytableLeftBtnBg.on('pointerup', () => {
-		if (!paytableLeftBtnBg.disabled) {
-			clickSound.play()
-			paytableLeftBtnBg.texture = TextureCache['page-left_hover.png']
-		}
-
-		if (paytableBook.currentPage - 1 === 0) {
-			paytableBook.currentPage -= 1
-
-			paytableLeftArrow.texture = TextureCache['arrow-left_disabled.png']
-			disableButton(paytableLeftBtnBg, 'page-left_disabled.png')
-		} else if (paytableBook.currentPage - 1 > 0) {
-			paytableBook.currentPage -= 1
-
-			paytableRightArrow.texture = TextureCache['arrow-right.png']
-			enableButton(paytableRightBtnBg, 'page-right.png')
-		}
-	})
-
-	addButtonEventListener(paytableRightBtnBg, ['mouseover', 'mouseout', 'pointerdown'])
-	paytableRightBtnBg.on('pointerup', () => {
-		if (!paytableRightBtnBg.disabled) {
-			clickSound.play()
-			paytableRightBtnBg.texture = TextureCache['page-right_hover.png']
-		}
-
-		if (paytableBook.currentPage + 1 === paytableBook.pages) {
-			paytableBook.currentPage += 1
-
-			paytableRightArrow.texture = TextureCache['arrow-right_disabled.png']
-			disableButton(paytableRightBtnBg, 'page-right_disabled.png')
-		} else if (paytableBook.currentPage + 1 < paytableBook.pages) {
-			paytableBook.currentPage += 1
-
-			paytableLeftArrow.texture = TextureCache['arrow-left.png']
-			enableButton(paytableLeftBtnBg, 'page-left.png')
-		}
-	})
-
-	addButtonEventListener(paytableMiddleBtnBg, ['mouseover', 'mouseout', 'pointerdown'])
-	paytableMiddleBtnBg.on('pointerup', () => {
+	const Paytable = makePaytable(id, { app })
+	Paytable.paytableMiddleBtnBg.on('pointerup', () => {
 		clickSound.play()
-		paytableMiddleBtnBg.texture = TextureCache['btn-exit_hover.png']
-		paytableContainer.visible = false
+		Paytable.paytableMiddleBtnBg.texture = TextureCache['btn-exit_hover.png']
+		Paytable.visible = false
 		bottomBarContainer.visible = true
 	})
 
-	paytableContainer.position.set(
-		view.width / 2 - paytableContainer.width / 2,
-		view.height - bottomBar.height - 170
-	)
-
-	initPaytable()
+	Paytable.position.set(view.width / 2 - Paytable.width / 2, view.height - bottomBar.height - 170)
 
 	// BottomBar Container
 	bottomBarContainer.name = 'BottomBar'
 	bottomBarContainer.addChild(
 		infoBarContainer,
-		buttonInfoContainer,
+		InfoButton,
 		TotalBet,
 		coinContainer,
 		WinBox,
@@ -345,9 +228,9 @@ const setup = function() {
 		view.height - bottomBar.height - 170
 	)
 
-	paytableContainer.visible = false
+	Paytable.visible = false
 
-	stage.addChild(bottomBarContainer, paytableContainer)
+	stage.addChild(bottomBarContainer, Paytable)
 
 	state = play
 	app.ticker.add((delta) => gameLoop(delta))
